@@ -14,7 +14,7 @@ func DatabaseInit() {
 	host := "localhost"
 	user := "postgres"
 	password := "secret"
-	dbName := "auth_gorm_echo"
+	dbName := "db_crowdfunding"
 	port := 5432
 
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable TimeZone=Asia/Jakarta", host, user, password, dbName, port)

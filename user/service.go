@@ -10,6 +10,7 @@ type Service interface {
 	Login(input LoginInput) (User, error)
 	IsEmailAvailable(input CheckEmailInput) (bool, error)
 	GetUserByID(ID int) (User, error)
+	SaveAvatar(ID int, fileLocation string) (User, error)
 }
 
 type service struct {
@@ -25,12 +26,15 @@ func (s *service) RegisterUser(input RegisterUserInput) (User, error) {
 	user := User{}
 	user.Name = input.Name
 	user.Email = input.Email
+	user.Occupation = input.Occupation
+	
 	password, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.MinCost)
 	if err != nil {
 		return user, err
 	}
 
 	user.Password = string(password)
+	user.Role = "user"
 
 	newUser, err := s.repository.Save(user)
 	if err != nil {
@@ -93,3 +97,24 @@ func (s *service) GetUserByID(ID int) (User, error) {
 
 // mapping struct input ke struct user
 // simpan struct User melalui repository
+
+// SaveAvatar
+func (s *service) SaveAvatar(ID int, fileLocation string) (User, error) {
+	// dapatkan user berdasarkan ID
+	// update attribute avatar file name
+	// simpan perubahan avatar file name ke database
+
+	user, err := s.repository.FindByID(ID)
+	if err != nil {
+		return user, err
+	}
+
+	user.AvatarFileName = fileLocation
+
+	updatedUser, err := s.repository.Update(user)
+	if err != nil {
+		return updatedUser, err
+	}
+
+	return updatedUser, nil
+}

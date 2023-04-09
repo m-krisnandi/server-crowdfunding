@@ -59,6 +59,7 @@ func main() {
 
 	api.Use(authMiddleware(authService, userService))
 	api.GET("/users/fetch", userHandler.FetchUser)
+	api.POST("/avatars", userHandler.UploadAvatar)
 
 
 	router.Logger.Fatal(router.Start(":9000"))

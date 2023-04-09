@@ -7,7 +7,10 @@ import (
 	"auth-gorm-echo/user"
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/labstack/echo/v4"
@@ -167,5 +170,71 @@ func (h *userHandler) FetchUser(c echo.Context) error {
 
 	response := helper.APIResponse("Successfuly fetch user data", http.StatusOK, "success", formatter)
 
+	return c.JSON(http.StatusOK, response)
+}
+
+func (h *userHandler) UploadAvatar(c echo.Context) error {
+	// input dari user
+	// simpan gambar di folder "images/"
+	// di service panggil repository - user
+	// repo ambil data user yang login berdasarkan jwt
+	// repo update data user simpan lokasi file
+
+	file, err := c.FormFile("avatar")
+	if err != nil {
+		data := echo.Map{"is_uploaded": false}
+		response := helper.APIResponse("Failed to upload avatar image", http.StatusBadRequest, "error", data)
+		return c.JSON(http.StatusBadRequest, response)
+	}
+
+	currentUser := c.Get("currentUser").(user.User)
+	userID := currentUser.ID
+
+	path := fmt.Sprintf("images/%d-%s", userID, file.Filename)
+
+	// source file
+	src, err := file.Open()
+	if err != nil {
+		data := echo.Map{"is_uploaded": false}
+		response := helper.APIResponse("Failed to upload avatar image", http.StatusBadRequest, "error", data)
+		return c.JSON(http.StatusBadRequest, response)
+	}
+	defer src.Close()
+
+	// only jpg,jpeg,png allowed
+	fileByte, _ := ioutil.ReadFile(path)
+	fileType := http.DetectContentType(fileByte)
+
+	if fileType != "image/jpeg" && fileType != "image/jpg" && fileType != "image/png" {
+		data := echo.Map{"is_uploaded": false}
+		response := helper.APIResponse("Only JPG/JPEG/PNG image is allowed", http.StatusBadRequest, "error", data)
+		return c.JSON(http.StatusBadRequest, response)
+	}
+
+	// destination file
+	dst, err := os.Create(path)
+	if err != nil {
+		data := echo.Map{"is_uploaded": false}
+		response := helper.APIResponse("Failed to upload avatar image", http.StatusBadRequest, "error", data)
+		return c.JSON(http.StatusBadRequest, response)
+	}
+	defer dst.Close()
+
+	// copy
+	if _, err = io.Copy(dst, src); err != nil {
+		data := echo.Map{"is_uploaded": false}
+		response := helper.APIResponse("Failed to upload avatar image", http.StatusBadRequest, "error", data)
+		return c.JSON(http.StatusBadRequest, response)
+	}
+
+	_, err = h.userService.SaveAvatar(userID, path)
+	if err != nil {
+		data := echo.Map{"is_uploaded": false}
+		response := helper.APIResponse("Failed to upload avatar image", http.StatusBadRequest, "error", data)
+		return c.JSON(http.StatusBadRequest, response)
+	}
+
+	data := echo.Map{"is_uploaded": true}
+	response := helper.APIResponse("Avatar successfully uploaded", http.StatusOK, "success", data)
 	return c.JSON(http.StatusOK, response)
 }
