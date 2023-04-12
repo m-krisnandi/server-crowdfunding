@@ -2,6 +2,7 @@ package main
 
 import (
 	"auth-gorm-echo/auth"
+	"auth-gorm-echo/campaign"
 	"auth-gorm-echo/config"
 	"auth-gorm-echo/handler"
 	"auth-gorm-echo/helper"
@@ -41,14 +42,20 @@ func main() {
 	config.RedisInit()
 
 	userRepository := user.NewRepository(db)
+	campaignRepository := campaign.NewRepository(db)
 
 	userService := user.NewService(userRepository)
+	campaignService := campaign.NewService(campaignRepository)
 	authService := auth.NewService()
 
 	userHandler := handler.NewUserHandler(userService, authService)
+	campaignHandler := handler.NewCampaignHandler(campaignService)
 	
 	router := echo.New()
 	router.Validator = &CustomValidator{validator: validator.New()}
+
+	// access images
+	router.Static("/images", "./images")
 
 	// Router
 	api := router.Group("/api/v1")
@@ -56,6 +63,8 @@ func main() {
 	api.POST("/users", userHandler.RegisterUser)
 	api.POST("/sessions", userHandler.Login)
 	api.POST("/email_checkers", userHandler.CheckEmailAvailability)
+
+	api.GET("/campaigns", campaignHandler.GetCampaigns)
 
 	api.Use(authMiddleware(authService, userService))
 	api.GET("/users/fetch", userHandler.FetchUser)
