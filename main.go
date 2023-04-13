@@ -71,6 +71,8 @@ func main() {
 	api.GET("/users/fetch", userHandler.FetchUser)
 	api.POST("/avatars", userHandler.UploadAvatar)
 
+	api.POST("/campaigns", campaignHandler.CreateCampaign)
+
 
 	router.Logger.Fatal(router.Start(":9000"))
 }
